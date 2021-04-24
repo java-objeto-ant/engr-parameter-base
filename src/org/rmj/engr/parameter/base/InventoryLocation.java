@@ -2,7 +2,7 @@
  * @author  Michael Cuison
  * @date    2018-04-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
@@ -14,30 +14,30 @@ import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitBrand;
+import org.rmj.engr.parameter.pojo.UnitInvLocation;
 
-public class Brand implements GRecord{   
+public class InventoryLocation implements GRecord{   
     @Override
-    public UnitBrand newRecord() {
-        UnitBrand loObject = new UnitBrand();
+    public UnitInvLocation newRecord() {
+        UnitInvLocation loObject = new UnitInvLocation();
         
         Connection loConn = null;
         loConn = setConnection();       
         
         //assign the primary values
-        loObject.setBrandCode(MiscUtil.getNextCode(loObject.getTable(), "sBrandCde", false, loConn, psBranchCd));
+        loObject.setLocationCode(MiscUtil.getNextCode(loObject.getTable(), "sLocatnCd", false, loConn, psBranchCd));
         
         return loObject;
     }
 
     @Override
-    public UnitBrand openRecord(String fstransNox) {
-        UnitBrand loObject = new UnitBrand();
+    public UnitInvLocation openRecord(String fstransNox) {
+        UnitInvLocation loObject = new UnitInvLocation();
         
         Connection loConn = null;
         loConn = setConnection();   
         
-        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sBrandCde = " + SQLUtil.toSQL(fstransNox));
+        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sLocatnCd = " + SQLUtil.toSQL(fstransNox));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         try {
@@ -60,42 +60,43 @@ public class Brand implements GRecord{
     }
 
     @Override
-    public UnitBrand saveRecord(Object foEntity, String fsTransNox) {
+    public UnitInvLocation saveRecord(Object foEntity, String fsTransNox) {
         String lsSQL = "";
-        UnitBrand loOldEnt = null;
-        UnitBrand loNewEnt = null;
-        UnitBrand loResult = null;
+        UnitInvLocation loOldEnt = null;
+        UnitInvLocation loNewEnt = null;
+        UnitInvLocation loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitBrand)) {
+        if (!(foEntity instanceof UnitInvLocation)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitBrand) foEntity;
+        loNewEnt = (UnitInvLocation) foEntity;
         
         
-        // Test if entry is ok
-        if (loNewEnt.getBrandName() == null || loNewEnt.getBrandName().isEmpty()){
-            setMessage("UNSET description detected.");
-            return loResult;
-        }
-        
-        if (loNewEnt.getInvTypeCode() == null || loNewEnt.getInvTypeCode().isEmpty()){
-            setMessage("UNSET inventory type detected.");
+        if (loNewEnt.getBriefDescript().equals("")){
+            setMessage("Invalid brief description detected.");
             return loResult;
         }
 
+        // Test if entry is ok
+        if (loNewEnt.getLocationName().equals("")){
+            setMessage("Invalid description detected.");
+            return loResult;
+        }
+        
         loNewEnt.setModifiedBy(poCrypt.encrypt(psUserIDxx));
         loNewEnt.setDateModified(poGRider.getServerDate());
+        
         
         // Generate the SQL Statement
         if (fsTransNox.equals("")){
             Connection loConn = null;
             loConn = setConnection();   
             
-            loNewEnt.setBrandCode(MiscUtil.getNextCode(loNewEnt.getTable(), "sBrandCde", false, loConn, psBranchCd));
+            loNewEnt.setLocationCode(MiscUtil.getNextCode(loNewEnt.getTable(), "sLocatnCd", false, loConn, psBranchCd));
             
             if (!pbWithParent) MiscUtil.close(loConn);
             
@@ -106,7 +107,7 @@ public class Brand implements GRecord{
             loOldEnt = openRecord(fsTransNox);
             
             //Generate the Update Statement
-            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sBrandCde = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
+            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sLocatnCd = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
         }
         
         //No changes have been made
@@ -135,7 +136,7 @@ public class Brand implements GRecord{
 
     @Override
     public boolean deleteRecord(String fsTransNox) {
-        UnitBrand loObject = openRecord(fsTransNox);
+        UnitInvLocation loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -144,7 +145,7 @@ public class Brand implements GRecord{
         }
         
         String lsSQL = "DELETE FROM " + loObject.getTable() + 
-                        " WHERE sBrandCde = " + SQLUtil.toSQL(fsTransNox);
+                        " WHERE sLocatnCd = " + SQLUtil.toSQL(fsTransNox);
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -165,7 +166,7 @@ public class Brand implements GRecord{
 
     @Override
     public boolean deactivateRecord(String fsTransNox) {
-        UnitBrand loObject = openRecord(fsTransNox);
+        UnitInvLocation loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -182,7 +183,7 @@ public class Brand implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.INACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sBrandCde = " + SQLUtil.toSQL(loObject.getBrandCode());
+                        " WHERE sLocatnCd = " + SQLUtil.toSQL(loObject.getLocationCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -202,7 +203,7 @@ public class Brand implements GRecord{
 
     @Override
     public boolean activateRecord(String fsTransNox) {
-        UnitBrand loObject = openRecord(fsTransNox);
+        UnitInvLocation loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -219,7 +220,7 @@ public class Brand implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sBrandCde = " + SQLUtil.toSQL(loObject.getBrandCode());
+                        " WHERE sLocatnCd = " + SQLUtil.toSQL(loObject.getLocationCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -269,7 +270,7 @@ public class Brand implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitBrand()));
+        return (MiscUtil.makeSelect(new UnitInvLocation()));
     }
     
     //Added methods

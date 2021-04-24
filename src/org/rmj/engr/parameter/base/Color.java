@@ -2,7 +2,7 @@
  * @author  Michael Cuison
  * @date    2018-04-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
@@ -14,30 +14,30 @@ import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitPromoDiscount;
+import org.rmj.engr.parameter.pojo.UnitColor;
 
-public class PromoDiscount implements GRecord{   
+public class Color implements GRecord{   
     @Override
-    public UnitPromoDiscount newRecord() {
-        UnitPromoDiscount loObject = new UnitPromoDiscount();
+    public UnitColor newRecord() {
+        UnitColor loObject = new UnitColor();
         
         Connection loConn = null;
         loConn = setConnection();       
         
         //assign the primary values
-        loObject.setDiscountID(MiscUtil.getNextCode(loObject.getTable(), "sDiscIDxx", true, loConn, ""));
+        loObject.setColorCode(MiscUtil.getNextCode(loObject.getTable(), "sColorCde", false, loConn, psBranchCd));
         
         return loObject;
     }
 
     @Override
-    public UnitPromoDiscount openRecord(String fstransNox) {
-        UnitPromoDiscount loObject = new UnitPromoDiscount();
+    public UnitColor openRecord(String fstransNox) {
+        UnitColor loObject = new UnitColor();
         
         Connection loConn = null;
         loConn = setConnection();   
         
-        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sDiscIDxx = " + SQLUtil.toSQL(fstransNox));
+        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sColorCde = " + SQLUtil.toSQL(fstransNox));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         try {
@@ -60,37 +60,28 @@ public class PromoDiscount implements GRecord{
     }
 
     @Override
-    public UnitPromoDiscount saveRecord(Object foEntity, String fsTransNox) {
+    public UnitColor saveRecord(Object foEntity, String fsTransNox) {
         String lsSQL = "";
-        UnitPromoDiscount loOldEnt = null;
-        UnitPromoDiscount loNewEnt = null;
-        UnitPromoDiscount loResult = null;
+        UnitColor loOldEnt = null;
+        UnitColor loNewEnt = null;
+        UnitColor loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitPromoDiscount)) {
+        if (!(foEntity instanceof UnitColor)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitPromoDiscount) foEntity;
+        loNewEnt = (UnitColor) foEntity;
         
         
         // Test if entry is ok
-        if (loNewEnt.getDescription()== null || loNewEnt.getDescription().isEmpty()){
+        if (loNewEnt.getColorName().equals("")){
             setMessage("Invalid description detected.");
             return loResult;
         }
         
-        if (loNewEnt.getDateFrom() == null){
-            setMessage("Invalid discount start date detected.");
-            return loResult;
-        }
-        
-        if (loNewEnt.getDateThru()== null){
-            setMessage("Invalid discount date thru detected.");
-            return loResult;
-        }
         
         loNewEnt.setModifiedBy(poCrypt.encrypt(psUserIDxx));
         loNewEnt.setDateModified(poGRider.getServerDate());
@@ -101,7 +92,7 @@ public class PromoDiscount implements GRecord{
             Connection loConn = null;
             loConn = setConnection();   
             
-            loNewEnt.setDiscountID(MiscUtil.getNextCode(loNewEnt.getTable(), "sDiscIDxx", true, loConn, ""));
+            loNewEnt.setColorCode(MiscUtil.getNextCode(loNewEnt.getTable(), "sColorCde", false, loConn, psBranchCd));
             
             if (!pbWithParent) MiscUtil.close(loConn);
             
@@ -112,12 +103,12 @@ public class PromoDiscount implements GRecord{
             loOldEnt = openRecord(fsTransNox);
             
             //Generate the Update Statement
-            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sDiscIDxx = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
+            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sColorCde = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
         }
         
         //No changes have been made
         if (lsSQL.equals("")){
-            setMessage("No changes made. Record not updated.");
+            setMessage("Record is not updated");
             return loResult;
         }
         
@@ -141,7 +132,7 @@ public class PromoDiscount implements GRecord{
 
     @Override
     public boolean deleteRecord(String fsTransNox) {
-        UnitPromoDiscount loObject = openRecord(fsTransNox);
+        UnitColor loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -150,7 +141,7 @@ public class PromoDiscount implements GRecord{
         }
         
         String lsSQL = "DELETE FROM " + loObject.getTable() + 
-                        " WHERE sDiscIDxx = " + SQLUtil.toSQL(fsTransNox);
+                        " WHERE sColorCde = " + SQLUtil.toSQL(fsTransNox);
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -171,7 +162,7 @@ public class PromoDiscount implements GRecord{
 
     @Override
     public boolean deactivateRecord(String fsTransNox) {
-        UnitPromoDiscount loObject = openRecord(fsTransNox);
+        UnitColor loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -188,7 +179,7 @@ public class PromoDiscount implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.INACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sDiscIDxx = " + SQLUtil.toSQL(loObject.getDiscountID());
+                        " WHERE sColorCde = " + SQLUtil.toSQL(loObject.getColorCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -208,7 +199,7 @@ public class PromoDiscount implements GRecord{
 
     @Override
     public boolean activateRecord(String fsTransNox) {
-        UnitPromoDiscount loObject = openRecord(fsTransNox);
+        UnitColor loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -225,7 +216,7 @@ public class PromoDiscount implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sDiscIDxx = " + SQLUtil.toSQL(loObject.getDiscountID());
+                        " WHERE sColorCde = " + SQLUtil.toSQL(loObject.getColorCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -275,7 +266,7 @@ public class PromoDiscount implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitPromoDiscount()));
+        return (MiscUtil.makeSelect(new UnitColor()));
     }
     
     //Added methods

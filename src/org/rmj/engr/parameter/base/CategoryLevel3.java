@@ -2,7 +2,7 @@
  * @author  Michael Cuison
  * @date    2018-04-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
@@ -14,12 +14,12 @@ import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitCategoryLevel4;
+import org.rmj.engr.parameter.pojo.UnitCategoryLevel3;
 
-public class CategoryLevel4 implements GRecord{   
+public class CategoryLevel3 implements GRecord{   
     @Override
-    public UnitCategoryLevel4 newRecord() {
-        UnitCategoryLevel4 loObject = new UnitCategoryLevel4();
+    public UnitCategoryLevel3 newRecord() {
+        UnitCategoryLevel3 loObject = new UnitCategoryLevel3();
         
         Connection loConn = null;
         loConn = setConnection();       
@@ -31,8 +31,8 @@ public class CategoryLevel4 implements GRecord{
     }
 
     @Override
-    public UnitCategoryLevel4 openRecord(String fstransNox) {
-        UnitCategoryLevel4 loObject = new UnitCategoryLevel4();
+    public UnitCategoryLevel3 openRecord(String fstransNox) {
+        UnitCategoryLevel3 loObject = new UnitCategoryLevel3();
         
         Connection loConn = null;
         loConn = setConnection();   
@@ -60,20 +60,20 @@ public class CategoryLevel4 implements GRecord{
     }
 
     @Override
-    public UnitCategoryLevel4 saveRecord(Object foEntity, String fsTransNox) {
+    public UnitCategoryLevel3 saveRecord(Object foEntity, String fsTransNox) {
         String lsSQL = "";
-        UnitCategoryLevel4 loOldEnt = null;
-        UnitCategoryLevel4 loNewEnt = null;
-        UnitCategoryLevel4 loResult = null;
+        UnitCategoryLevel3 loOldEnt = null;
+        UnitCategoryLevel3 loNewEnt = null;
+        UnitCategoryLevel3 loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitCategoryLevel4)) {
+        if (!(foEntity instanceof UnitCategoryLevel3)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitCategoryLevel4) foEntity;
+        loNewEnt = (UnitCategoryLevel3) foEntity;
         
         
         // Test if entry is ok
@@ -82,7 +82,6 @@ public class CategoryLevel4 implements GRecord{
             return loResult;
         }
         
-        /*This field is optional*/
         if (loNewEnt.getMainCategory()== null || loNewEnt.getMainCategory().isEmpty()){
             setMessage("Invalid main category detected.");
             return loResult;
@@ -113,7 +112,7 @@ public class CategoryLevel4 implements GRecord{
         
         //No changes have been made
         if (lsSQL.equals("")){
-            setMessage("Record is not updated");
+            setMessage("Record is not updatred");
             return loResult;
         }
         
@@ -137,7 +136,7 @@ public class CategoryLevel4 implements GRecord{
 
     @Override
     public boolean deleteRecord(String fsTransNox) {
-        UnitCategoryLevel4 loObject = openRecord(fsTransNox);
+        UnitCategoryLevel3 loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -167,7 +166,7 @@ public class CategoryLevel4 implements GRecord{
 
     @Override
     public boolean deactivateRecord(String fsTransNox) {
-        UnitCategoryLevel4 loObject = openRecord(fsTransNox);
+        UnitCategoryLevel3 loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -204,7 +203,7 @@ public class CategoryLevel4 implements GRecord{
 
     @Override
     public boolean activateRecord(String fsTransNox) {
-        UnitCategoryLevel4 loObject = openRecord(fsTransNox);
+        UnitCategoryLevel3 loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -271,7 +270,7 @@ public class CategoryLevel4 implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitCategoryLevel4()));
+        return (MiscUtil.makeSelect(new UnitCategoryLevel3()));
     }
     
     //Added methods

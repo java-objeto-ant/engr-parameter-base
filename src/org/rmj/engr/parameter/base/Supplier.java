@@ -2,7 +2,7 @@
  * @author  Michael Cuison
  * @date    2018-04-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
@@ -14,30 +14,27 @@ import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitInventory;
+import org.rmj.engr.parameter.pojo.UnitSupplier;
 
-public class Inventory implements GRecord{   
+public class Supplier implements GRecord{   
     @Override
-    public UnitInventory newRecord() {
-        UnitInventory loObject = new UnitInventory();
+    public UnitSupplier newRecord() {
+        UnitSupplier loObject = new UnitSupplier();
         
         Connection loConn = null;
         loConn = setConnection();       
         
-        //assign the primary values
-        loObject.setStockID(MiscUtil.getNextCode(loObject.getTable(), "sStockIDx", true, loConn, psBranchCd));
-        
         return loObject;
     }
 
-    @Override
-    public UnitInventory openRecord(String fstransNox) {
-        UnitInventory loObject = new UnitInventory();
+    public UnitSupplier openRecord(String fsClientID, String fsBranchCd) {
+        UnitSupplier loObject = new UnitSupplier();
         
         Connection loConn = null;
         loConn = setConnection();   
         
-        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sStockIDx = " + SQLUtil.toSQL(fstransNox));
+        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sClientID = " + SQLUtil.toSQL(fsClientID) +
+                                                                " AND sBranchCD = " + SQLUtil.toSQL(fsBranchCd));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         try {
@@ -59,76 +56,40 @@ public class Inventory implements GRecord{
         return loObject;
     }
 
-    @Override
-    public UnitInventory saveRecord(Object foEntity, String fsTransNox) {
+    public UnitSupplier saveRecord(Object foEntity, String fsClientID, String fsBranchCd) {
         String lsSQL = "";
-        UnitInventory loOldEnt = null;
-        UnitInventory loNewEnt = null;
-        UnitInventory loResult = null;
+        UnitSupplier loOldEnt = null;
+        UnitSupplier loNewEnt = null;
+        UnitSupplier loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitInventory)) {
+        if (!(foEntity instanceof UnitSupplier)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitInventory) foEntity;
+        loNewEnt = (UnitSupplier) foEntity;
         
         
         // Test if entry is ok
-        if (loNewEnt.getBarcode() == null || loNewEnt.getBarcode().isEmpty()){
-            setMessage("Invalid barcode detected.");
+        if (loNewEnt.getClientID()== null || loNewEnt.getClientID().isEmpty()){
+            setMessage("Invalid client name detected.");
             return loResult;
         }
         
-        if (loNewEnt.getDescription()== null || loNewEnt.getDescription().isEmpty()){
-            setMessage("Invalid description detected.");
-            return loResult;
-        }
-        
-        if (loNewEnt.getBriefDesc()== null || loNewEnt.getBriefDesc().isEmpty()){
-            setMessage("Invalid brief description detected.");
-            return loResult;
-        }
-        
-        if (loNewEnt.getCategory1()== null || loNewEnt.getCategory1().isEmpty()){
-            setMessage("Invalid category detected.");
-            return loResult;
-        }
-        
-        if (loNewEnt.getBrandCode()== null || loNewEnt.getBrandCode().isEmpty()){
-            setMessage("Invalid brand detected.");
-            return loResult;
-        }
-       
-        /*uncomment this if needed*/
-        /*if (loNewEnt.getModelID()== null || loNewEnt.getModelID().isEmpty()){
-            setMessage("Invalid model detected.");
-            return loResult;
-        }*/
-        
-        /*uncomment this if needed*/
-        /*if (loNewEnt.getColorCode()== null || loNewEnt.getColorCode().isEmpty()){
-            setMessage("Invalid color detected.");
-            return loResult;
-        }*/
-        
-        if (loNewEnt.getInvTypeCode()== null || loNewEnt.getInvTypeCode().isEmpty()){
-            setMessage("Invalid inventory type detected.");
+        if (loNewEnt.getBranchCode()== null || loNewEnt.getBranchCode().isEmpty()){
+            setMessage("Invalid branch detected.");
             return loResult;
         }
         
         loNewEnt.setModifiedBy(poCrypt.encrypt(psUserIDxx));
         loNewEnt.setDateModified(poGRider.getServerDate());
         
-        
         // Generate the SQL Statement
-        if (fsTransNox.equals("")){
+        if (fsClientID.equals("") && fsBranchCd.equals("")){
             Connection loConn = null;
             loConn = setConnection();   
-            
-            loNewEnt.setStockID(MiscUtil.getNextCode(loNewEnt.getTable(), "sStockIDx", true, loConn, psBranchCd));
             
             if (!pbWithParent) MiscUtil.close(loConn);
             
@@ -136,15 +97,16 @@ public class Inventory implements GRecord{
             lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt);
         }else{
             //Load previous transaction
-            loOldEnt = openRecord(fsTransNox);
+            loOldEnt = openRecord(fsClientID, fsBranchCd);
             
             //Generate the Update Statement
-            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sStockIDx = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
+            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sClientID = " + SQLUtil.toSQL(loNewEnt.getValue(1)) + 
+                                                                            " AND sBranchCd = " + SQLUtil.toSQL(loNewEnt.getValue(2)));
         }
         
         //No changes have been made
         if (lsSQL.equals("")){
-            setMessage("Record is not updated");
+            setMessage("No changes made. Record not updated.");
             return loResult;
         }
         
@@ -166,9 +128,8 @@ public class Inventory implements GRecord{
         return loResult;
     }
 
-    @Override
-    public boolean deleteRecord(String fsTransNox) {
-        UnitInventory loObject = openRecord(fsTransNox);
+    public boolean deleteRecord(String fsClientID, String fsBranchCd) {
+        UnitSupplier loObject = openRecord(fsClientID, fsBranchCd);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -177,7 +138,8 @@ public class Inventory implements GRecord{
         }
         
         String lsSQL = "DELETE FROM " + loObject.getTable() + 
-                        " WHERE sStockIDx = " + SQLUtil.toSQL(fsTransNox);
+                        " WHERE sClientID = " + SQLUtil.toSQL(loObject.getClientID()) + 
+                            " AND sBranchCd = " + SQLUtil.toSQL(loObject.getBranchCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -196,9 +158,8 @@ public class Inventory implements GRecord{
         return lbResult;
     }
 
-    @Override
-    public boolean deactivateRecord(String fsTransNox) {
-        UnitInventory loObject = openRecord(fsTransNox);
+    public boolean deactivateRecord(String fsClientID, String fsBranchCd) {
+        UnitSupplier loObject = openRecord(fsClientID, fsBranchCd);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -215,7 +176,8 @@ public class Inventory implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.INACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sStockIDx = " + SQLUtil.toSQL(loObject.getStockID());
+                        " WHERE sClientID = " + SQLUtil.toSQL(loObject.getClientID()) + 
+                            " AND sBranchCd = " + SQLUtil.toSQL(loObject.getBranchCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -233,9 +195,8 @@ public class Inventory implements GRecord{
         return lbResult;
     }
 
-    @Override
-    public boolean activateRecord(String fsTransNox) {
-        UnitInventory loObject = openRecord(fsTransNox);
+    public boolean activateRecord(String fsClientID, String fsBranchCd) {
+        UnitSupplier loObject = openRecord(fsClientID, fsBranchCd);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -252,7 +213,8 @@ public class Inventory implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sStockIDx = " + SQLUtil.toSQL(loObject.getStockID());
+                        " WHERE sClientID = " + SQLUtil.toSQL(loObject.getClientID()) + 
+                            " AND sBranchCd = " + SQLUtil.toSQL(loObject.getBranchCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -302,7 +264,7 @@ public class Inventory implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitInventory()));
+        return (MiscUtil.makeSelect(new UnitSupplier()));
     }
     
     //Added methods
@@ -336,4 +298,29 @@ public class Inventory implements GRecord{
     private String psErrMsgx = "";
     private boolean pbWithParent = false;
     private final GCrypt poCrypt = new GCrypt();
+
+    @Override
+    public Object openRecord(String string) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Object saveRecord(Object o, String string) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean deleteRecord(String string) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean deactivateRecord(String string) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean activateRecord(String string) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

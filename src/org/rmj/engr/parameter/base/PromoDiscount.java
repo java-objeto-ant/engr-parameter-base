@@ -2,7 +2,7 @@
  * @author  Michael Cuison
  * @date    2018-04-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
@@ -14,27 +14,30 @@ import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitBank;
+import org.rmj.engr.parameter.pojo.UnitPromoDiscount;
 
-public class Bank implements GRecord{   
+public class PromoDiscount implements GRecord{   
     @Override
-    public UnitBank newRecord() {
-        UnitBank loObject = new UnitBank();
+    public UnitPromoDiscount newRecord() {
+        UnitPromoDiscount loObject = new UnitPromoDiscount();
         
         Connection loConn = null;
         loConn = setConnection();       
+        
+        //assign the primary values
+        loObject.setDiscountID(MiscUtil.getNextCode(loObject.getTable(), "sDiscIDxx", true, loConn, ""));
         
         return loObject;
     }
 
     @Override
-    public UnitBank openRecord(String fstransNox) {
-        UnitBank loObject = new UnitBank();
+    public UnitPromoDiscount openRecord(String fstransNox) {
+        UnitPromoDiscount loObject = new UnitPromoDiscount();
         
         Connection loConn = null;
         loConn = setConnection();   
         
-        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sBankCode = " + SQLUtil.toSQL(fstransNox));
+        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sDiscIDxx = " + SQLUtil.toSQL(fstransNox));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         try {
@@ -57,46 +60,48 @@ public class Bank implements GRecord{
     }
 
     @Override
-    public UnitBank saveRecord(Object foEntity, String fsTransNox) {
+    public UnitPromoDiscount saveRecord(Object foEntity, String fsTransNox) {
         String lsSQL = "";
-        UnitBank loOldEnt = null;
-        UnitBank loNewEnt = null;
-        UnitBank loResult = null;
+        UnitPromoDiscount loOldEnt = null;
+        UnitPromoDiscount loNewEnt = null;
+        UnitPromoDiscount loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitBank)) {
+        if (!(foEntity instanceof UnitPromoDiscount)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitBank) foEntity;
+        loNewEnt = (UnitPromoDiscount) foEntity;
         
         
         // Test if entry is ok
-        if (loNewEnt.getBankCode()== null || 
-            loNewEnt.getBankCode().isEmpty() ||
-            loNewEnt.getBankCode().length() > 10){
-            
-            setMessage("Invalid code detected.");
+        if (loNewEnt.getDescription()== null || loNewEnt.getDescription().isEmpty()){
+            setMessage("Invalid description detected.");
             return loResult;
         }
         
-        if (loNewEnt.getBankName()== null || 
-            loNewEnt.getBankName().isEmpty() ||
-            loNewEnt.getBankName().length() > 30){
-            
-            setMessage("Invalid description detected.");
+        if (loNewEnt.getDateFrom() == null){
+            setMessage("Invalid discount start date detected.");
+            return loResult;
+        }
+        
+        if (loNewEnt.getDateThru()== null){
+            setMessage("Invalid discount date thru detected.");
             return loResult;
         }
         
         loNewEnt.setModifiedBy(poCrypt.encrypt(psUserIDxx));
         loNewEnt.setDateModified(poGRider.getServerDate());
         
+        
         // Generate the SQL Statement
         if (fsTransNox.equals("")){
             Connection loConn = null;
             loConn = setConnection();   
+            
+            loNewEnt.setDiscountID(MiscUtil.getNextCode(loNewEnt.getTable(), "sDiscIDxx", true, loConn, ""));
             
             if (!pbWithParent) MiscUtil.close(loConn);
             
@@ -107,12 +112,12 @@ public class Bank implements GRecord{
             loOldEnt = openRecord(fsTransNox);
             
             //Generate the Update Statement
-            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sBankCode = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
+            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sDiscIDxx = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
         }
         
         //No changes have been made
         if (lsSQL.equals("")){
-            setMessage("Record is not updated");
+            setMessage("No changes made. Record not updated.");
             return loResult;
         }
         
@@ -136,7 +141,7 @@ public class Bank implements GRecord{
 
     @Override
     public boolean deleteRecord(String fsTransNox) {
-        UnitBank loObject = openRecord(fsTransNox);
+        UnitPromoDiscount loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -145,7 +150,7 @@ public class Bank implements GRecord{
         }
         
         String lsSQL = "DELETE FROM " + loObject.getTable() + 
-                        " WHERE sBankCode = " + SQLUtil.toSQL(fsTransNox);
+                        " WHERE sDiscIDxx = " + SQLUtil.toSQL(fsTransNox);
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -166,7 +171,7 @@ public class Bank implements GRecord{
 
     @Override
     public boolean deactivateRecord(String fsTransNox) {
-        UnitBank loObject = openRecord(fsTransNox);
+        UnitPromoDiscount loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -183,7 +188,7 @@ public class Bank implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.INACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sBankCode = " + SQLUtil.toSQL(loObject.getBankCode());
+                        " WHERE sDiscIDxx = " + SQLUtil.toSQL(loObject.getDiscountID());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -203,7 +208,7 @@ public class Bank implements GRecord{
 
     @Override
     public boolean activateRecord(String fsTransNox) {
-        UnitBank loObject = openRecord(fsTransNox);
+        UnitPromoDiscount loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -220,7 +225,7 @@ public class Bank implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sBankCode = " + SQLUtil.toSQL(loObject.getBankCode());
+                        " WHERE sDiscIDxx = " + SQLUtil.toSQL(loObject.getDiscountID());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -270,7 +275,7 @@ public class Bank implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitBank()));
+        return (MiscUtil.makeSelect(new UnitPromoDiscount()));
     }
     
     //Added methods

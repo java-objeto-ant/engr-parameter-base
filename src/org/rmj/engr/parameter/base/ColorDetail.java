@@ -2,7 +2,7 @@
  * @author  Michael Cuison
  * @date    2018-04-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
@@ -14,30 +14,30 @@ import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitColor;
+import org.rmj.engr.parameter.pojo.UnitColorDetail;
 
-public class Color implements GRecord{   
+public class ColorDetail implements GRecord{   
     @Override
-    public UnitColor newRecord() {
-        UnitColor loObject = new UnitColor();
+    public UnitColorDetail newRecord() {
+        UnitColorDetail loObject = new UnitColorDetail();
         
         Connection loConn = null;
         loConn = setConnection();       
         
         //assign the primary values
-        loObject.setColorCode(MiscUtil.getNextCode(loObject.getTable(), "sColorCde", false, loConn, psBranchCd));
+        loObject.setColorID(MiscUtil.getNextCode(loObject.getTable(), "sColorIDx", false, loConn, psBranchCd));
         
         return loObject;
     }
 
     @Override
-    public UnitColor openRecord(String fstransNox) {
-        UnitColor loObject = new UnitColor();
+    public UnitColorDetail openRecord(String fstransNox) {
+        UnitColorDetail loObject = new UnitColorDetail();
         
         Connection loConn = null;
         loConn = setConnection();   
         
-        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sColorCde = " + SQLUtil.toSQL(fstransNox));
+        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sColorIDx = " + SQLUtil.toSQL(fstransNox));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         try {
@@ -60,20 +60,20 @@ public class Color implements GRecord{
     }
 
     @Override
-    public UnitColor saveRecord(Object foEntity, String fsTransNox) {
+    public UnitColorDetail saveRecord(Object foEntity, String fsTransNox) {
         String lsSQL = "";
-        UnitColor loOldEnt = null;
-        UnitColor loNewEnt = null;
-        UnitColor loResult = null;
+        UnitColorDetail loOldEnt = null;
+        UnitColorDetail loNewEnt = null;
+        UnitColorDetail loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitColor)) {
+        if (!(foEntity instanceof UnitColorDetail)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitColor) foEntity;
+        loNewEnt = (UnitColorDetail) foEntity;
         
         
         // Test if entry is ok
@@ -92,7 +92,7 @@ public class Color implements GRecord{
             Connection loConn = null;
             loConn = setConnection();   
             
-            loNewEnt.setColorCode(MiscUtil.getNextCode(loNewEnt.getTable(), "sColorCde", false, loConn, psBranchCd));
+            loNewEnt.setColorID(MiscUtil.getNextCode(loNewEnt.getTable(), "sColorIDx", false, loConn, psBranchCd));
             
             if (!pbWithParent) MiscUtil.close(loConn);
             
@@ -103,7 +103,7 @@ public class Color implements GRecord{
             loOldEnt = openRecord(fsTransNox);
             
             //Generate the Update Statement
-            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sColorCde = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
+            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sColorIDx = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
         }
         
         //No changes have been made
@@ -132,7 +132,7 @@ public class Color implements GRecord{
 
     @Override
     public boolean deleteRecord(String fsTransNox) {
-        UnitColor loObject = openRecord(fsTransNox);
+        UnitColorDetail loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -141,7 +141,7 @@ public class Color implements GRecord{
         }
         
         String lsSQL = "DELETE FROM " + loObject.getTable() + 
-                        " WHERE sColorCde = " + SQLUtil.toSQL(fsTransNox);
+                        " WHERE sColorIDx = " + SQLUtil.toSQL(fsTransNox);
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -162,7 +162,7 @@ public class Color implements GRecord{
 
     @Override
     public boolean deactivateRecord(String fsTransNox) {
-        UnitColor loObject = openRecord(fsTransNox);
+        UnitColorDetail loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -179,7 +179,7 @@ public class Color implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.INACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sColorCde = " + SQLUtil.toSQL(loObject.getColorCode());
+                        " WHERE sColorIDx = " + SQLUtil.toSQL(loObject.getColorCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -199,7 +199,7 @@ public class Color implements GRecord{
 
     @Override
     public boolean activateRecord(String fsTransNox) {
-        UnitColor loObject = openRecord(fsTransNox);
+        UnitColorDetail loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -216,7 +216,7 @@ public class Color implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sColorCde = " + SQLUtil.toSQL(loObject.getColorCode());
+                        " WHERE sColorIDx = " + SQLUtil.toSQL(loObject.getColorCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -266,7 +266,7 @@ public class Color implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitColor()));
+        return (MiscUtil.makeSelect(new UnitColorDetail()));
     }
     
     //Added methods

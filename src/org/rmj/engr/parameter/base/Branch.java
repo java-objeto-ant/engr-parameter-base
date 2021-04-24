@@ -2,7 +2,7 @@
  * @author  Michael Cuison
  * @date    2018-04-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
@@ -14,30 +14,30 @@ import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitTerm;
+import org.rmj.engr.parameter.pojo.UnitBranch;
 
-public class Term implements GRecord{   
+public class Branch implements GRecord{   
     @Override
-    public UnitTerm newRecord() {
-        UnitTerm loObject = new UnitTerm();
+    public UnitBranch newRecord() {
+        UnitBranch loObject = new UnitBranch();
         
         Connection loConn = null;
         loConn = setConnection();       
         
         //assign the primary values
-        loObject.setTermID(MiscUtil.getNextCode(loObject.getTable(), "sTermCode", false, loConn, psBranchCd));
+        loObject.setBranchCode(MiscUtil.getNextCode(loObject.getTable(), "sBranchCd", false, loConn, psBranchCd));
         
         return loObject;
     }
 
     @Override
-    public UnitTerm openRecord(String fstransNox) {
-        UnitTerm loObject = new UnitTerm();
+    public UnitBranch openRecord(String fstransNox) {
+        UnitBranch loObject = new UnitBranch();
         
         Connection loConn = null;
         loConn = setConnection();   
         
-        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sTermCode = " + SQLUtil.toSQL(fstransNox));
+        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sBranchCd = " + SQLUtil.toSQL(fstransNox));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         try {
@@ -60,24 +60,24 @@ public class Term implements GRecord{
     }
 
     @Override
-    public UnitTerm saveRecord(Object foEntity, String fsTransNox) {
+    public UnitBranch saveRecord(Object foEntity, String fsTransNox) {
         String lsSQL = "";
-        UnitTerm loOldEnt = null;
-        UnitTerm loNewEnt = null;
-        UnitTerm loResult = null;
+        UnitBranch loOldEnt = null;
+        UnitBranch loNewEnt = null;
+        UnitBranch loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitTerm)) {
+        if (!(foEntity instanceof UnitBranch)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitTerm) foEntity;
+        loNewEnt = (UnitBranch) foEntity;
         
         
         // Test if entry is ok
-        if (loNewEnt.getTermName() == null || loNewEnt.getTermName().isEmpty()){
+        if (loNewEnt.getBranchName()== null || loNewEnt.getBranchName().isEmpty()){
             setMessage("Invalid description detected.");
             return loResult;
         }
@@ -91,7 +91,7 @@ public class Term implements GRecord{
             Connection loConn = null;
             loConn = setConnection();   
             
-            loNewEnt.setTermID(MiscUtil.getNextCode(loNewEnt.getTable(), "sTermCode", false, loConn, psBranchCd));
+            loNewEnt.setBranchCode(MiscUtil.getNextCode(loNewEnt.getTable(), "sBranchCd", false, loConn, psBranchCd));
             
             if (!pbWithParent) MiscUtil.close(loConn);
             
@@ -102,12 +102,12 @@ public class Term implements GRecord{
             loOldEnt = openRecord(fsTransNox);
             
             //Generate the Update Statement
-            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sTermCode = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
+            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sBranchCd = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
         }
         
         //No changes have been made
         if (lsSQL.equals("")){
-            setMessage("No changes made. Record not updated.");
+            setMessage("Record is not updated");
             return loResult;
         }
         
@@ -131,7 +131,7 @@ public class Term implements GRecord{
 
     @Override
     public boolean deleteRecord(String fsTransNox) {
-        UnitTerm loObject = openRecord(fsTransNox);
+        UnitBranch loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -140,7 +140,7 @@ public class Term implements GRecord{
         }
         
         String lsSQL = "DELETE FROM " + loObject.getTable() + 
-                        " WHERE sTermCode = " + SQLUtil.toSQL(fsTransNox);
+                        " WHERE sBranchCd = " + SQLUtil.toSQL(fsTransNox);
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -161,7 +161,7 @@ public class Term implements GRecord{
 
     @Override
     public boolean deactivateRecord(String fsTransNox) {
-        UnitTerm loObject = openRecord(fsTransNox);
+        UnitBranch loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -178,7 +178,7 @@ public class Term implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.INACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sTermCode = " + SQLUtil.toSQL(loObject.getTermID());
+                        " WHERE sBranchCd = " + SQLUtil.toSQL(loObject.getBranchCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -198,7 +198,7 @@ public class Term implements GRecord{
 
     @Override
     public boolean activateRecord(String fsTransNox) {
-        UnitTerm loObject = openRecord(fsTransNox);
+        UnitBranch loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -215,7 +215,7 @@ public class Term implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sTermCode = " + SQLUtil.toSQL(loObject.getTermID());
+                        " WHERE sBranchCd = " + SQLUtil.toSQL(loObject.getBranchCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -265,7 +265,7 @@ public class Term implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitTerm()));
+        return (MiscUtil.makeSelect(new UnitBranch()));
     }
     
     //Added methods

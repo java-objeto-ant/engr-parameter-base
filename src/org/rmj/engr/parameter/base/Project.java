@@ -1,40 +1,42 @@
 /**
  * @author  Michael Cuison
- * @date    2018-04-19
+ * @date    2020-01-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import org.rmj.appdriver.GCrypt;
 import org.rmj.appdriver.GRider;
 import org.rmj.appdriver.MiscUtil;
 import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitSupplier;
+import org.rmj.engr.parameter.pojo.UnitProject;
 
-public class Supplier implements GRecord{   
+public class Project implements GRecord{   
     @Override
-    public UnitSupplier newRecord() {
-        UnitSupplier loObject = new UnitSupplier();
+    public UnitProject newRecord() {
+        UnitProject loObject = new UnitProject();
         
         Connection loConn = null;
         loConn = setConnection();       
         
+        //assign the primary values
+        loObject.setProjectCode(MiscUtil.getNextCode(loObject.getTable(), "sProjCode", true, loConn, ""));
+        
         return loObject;
     }
 
-    public UnitSupplier openRecord(String fsClientID, String fsBranchCd) {
-        UnitSupplier loObject = new UnitSupplier();
+    @Override
+    public UnitProject openRecord(String fstransNox) {
+        UnitProject loObject = new UnitProject();
         
         Connection loConn = null;
         loConn = setConnection();   
         
-        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sClientID = " + SQLUtil.toSQL(fsClientID) +
-                                                                " AND sBranchCD = " + SQLUtil.toSQL(fsBranchCd));
+        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sProjCode = " + SQLUtil.toSQL(fstransNox));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         try {
@@ -56,40 +58,39 @@ public class Supplier implements GRecord{
         return loObject;
     }
 
-    public UnitSupplier saveRecord(Object foEntity, String fsClientID, String fsBranchCd) {
+    @Override
+    public UnitProject saveRecord(Object foEntity, String fsTransNox) {
         String lsSQL = "";
-        UnitSupplier loOldEnt = null;
-        UnitSupplier loNewEnt = null;
-        UnitSupplier loResult = null;
+        UnitProject loOldEnt = null;
+        UnitProject loNewEnt = null;
+        UnitProject loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitSupplier)) {
+        if (!(foEntity instanceof UnitProject)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitSupplier) foEntity;
+        loNewEnt = (UnitProject) foEntity;
         
         
         // Test if entry is ok
-        if (loNewEnt.getClientID()== null || loNewEnt.getClientID().isEmpty()){
-            setMessage("Invalid client name detected.");
+        if (loNewEnt.getProjectName()== null || loNewEnt.getProjectName().isEmpty()){
+            setMessage("Invalid description detected.");
             return loResult;
         }
         
-        if (loNewEnt.getBranchCode()== null || loNewEnt.getBranchCode().isEmpty()){
-            setMessage("Invalid branch detected.");
-            return loResult;
-        }
-        
-        loNewEnt.setModifiedBy(poCrypt.encrypt(psUserIDxx));
+        loNewEnt.setModifiedBy(psUserIDxx);
         loNewEnt.setDateModified(poGRider.getServerDate());
         
+        
         // Generate the SQL Statement
-        if (fsClientID.equals("") && fsBranchCd.equals("")){
+        if (fsTransNox.equals("")){
             Connection loConn = null;
             loConn = setConnection();   
+            
+            loNewEnt.setProjectCode(MiscUtil.getNextCode(loNewEnt.getTable(), "sProjCode", true, loConn, ""));
             
             if (!pbWithParent) MiscUtil.close(loConn);
             
@@ -97,16 +98,15 @@ public class Supplier implements GRecord{
             lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt);
         }else{
             //Load previous transaction
-            loOldEnt = openRecord(fsClientID, fsBranchCd);
+            loOldEnt = openRecord(fsTransNox);
             
             //Generate the Update Statement
-            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sClientID = " + SQLUtil.toSQL(loNewEnt.getValue(1)) + 
-                                                                            " AND sBranchCd = " + SQLUtil.toSQL(loNewEnt.getValue(2)));
+            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sProjCode = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
         }
         
         //No changes have been made
         if (lsSQL.equals("")){
-            setMessage("No changes made. Record not updated.");
+            setMessage("Record is not updated");
             return loResult;
         }
         
@@ -128,8 +128,9 @@ public class Supplier implements GRecord{
         return loResult;
     }
 
-    public boolean deleteRecord(String fsClientID, String fsBranchCd) {
-        UnitSupplier loObject = openRecord(fsClientID, fsBranchCd);
+    @Override
+    public boolean deleteRecord(String fsTransNox) {
+        UnitProject loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -138,8 +139,7 @@ public class Supplier implements GRecord{
         }
         
         String lsSQL = "DELETE FROM " + loObject.getTable() + 
-                        " WHERE sClientID = " + SQLUtil.toSQL(loObject.getClientID()) + 
-                            " AND sBranchCd = " + SQLUtil.toSQL(loObject.getBranchCode());
+                        " WHERE sProjCode = " + SQLUtil.toSQL(fsTransNox);
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -158,8 +158,9 @@ public class Supplier implements GRecord{
         return lbResult;
     }
 
-    public boolean deactivateRecord(String fsClientID, String fsBranchCd) {
-        UnitSupplier loObject = openRecord(fsClientID, fsBranchCd);
+    @Override
+    public boolean deactivateRecord(String fsTransNox) {
+        UnitProject loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -174,10 +175,9 @@ public class Supplier implements GRecord{
         
         String lsSQL = "UPDATE " + loObject.getTable() + 
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.INACTIVE) + 
-                            ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
+                            ", sModified = " + SQLUtil.toSQL(psUserIDxx) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sClientID = " + SQLUtil.toSQL(loObject.getClientID()) + 
-                            " AND sBranchCd = " + SQLUtil.toSQL(loObject.getBranchCode());
+                        " WHERE sProjCode = " + SQLUtil.toSQL(loObject.getProjectCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -195,8 +195,9 @@ public class Supplier implements GRecord{
         return lbResult;
     }
 
-    public boolean activateRecord(String fsClientID, String fsBranchCd) {
-        UnitSupplier loObject = openRecord(fsClientID, fsBranchCd);
+    @Override
+    public boolean activateRecord(String fsTransNox) {
+        UnitProject loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -211,10 +212,9 @@ public class Supplier implements GRecord{
         
         String lsSQL = "UPDATE " + loObject.getTable() + 
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE) + 
-                            ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
+                            ", sModified = " + SQLUtil.toSQL(psUserIDxx) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sClientID = " + SQLUtil.toSQL(loObject.getClientID()) + 
-                            " AND sBranchCd = " + SQLUtil.toSQL(loObject.getBranchCode());
+                        " WHERE sProjCode = " + SQLUtil.toSQL(loObject.getProjectCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -264,7 +264,7 @@ public class Supplier implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitSupplier()));
+        return (MiscUtil.makeSelect(new UnitProject()));
     }
     
     //Added methods
@@ -297,30 +297,4 @@ public class Supplier implements GRecord{
     private String psWarnMsg = "";
     private String psErrMsgx = "";
     private boolean pbWithParent = false;
-    private final GCrypt poCrypt = new GCrypt();
-
-    @Override
-    public Object openRecord(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object saveRecord(Object o, String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean deleteRecord(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean deactivateRecord(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean activateRecord(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 }

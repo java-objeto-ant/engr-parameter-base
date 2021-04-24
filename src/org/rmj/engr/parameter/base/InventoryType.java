@@ -2,7 +2,7 @@
  * @author  Michael Cuison
  * @date    2018-04-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
@@ -14,30 +14,27 @@ import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitDepartment;
+import org.rmj.engr.parameter.pojo.UnitInventoryType;
 
-public class Department implements GRecord{   
+public class InventoryType implements GRecord{   
     @Override
-    public UnitDepartment newRecord() {
-        UnitDepartment loObject = new UnitDepartment();
+    public UnitInventoryType newRecord() {
+        UnitInventoryType loObject = new UnitInventoryType();
         
         Connection loConn = null;
         loConn = setConnection();       
-        
-        //assign the primary values
-        loObject.setDepartmentID(MiscUtil.getNextCode(loObject.getTable(), "sDeptIDxx", false, loConn, psDeptIDxx));
         
         return loObject;
     }
 
     @Override
-    public UnitDepartment openRecord(String fstransNox) {
-        UnitDepartment loObject = new UnitDepartment();
+    public UnitInventoryType openRecord(String fstransNox) {
+        UnitInventoryType loObject = new UnitInventoryType();
         
         Connection loConn = null;
         loConn = setConnection();   
         
-        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sDeptIDxx = " + SQLUtil.toSQL(fstransNox));
+        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sInvTypCd = " + SQLUtil.toSQL(fstransNox));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         try {
@@ -60,24 +57,29 @@ public class Department implements GRecord{
     }
 
     @Override
-    public UnitDepartment saveRecord(Object foEntity, String fsTransNox) {
+    public UnitInventoryType saveRecord(Object foEntity, String fsTransNox) {
         String lsSQL = "";
-        UnitDepartment loOldEnt = null;
-        UnitDepartment loNewEnt = null;
-        UnitDepartment loResult = null;
+        UnitInventoryType loOldEnt = null;
+        UnitInventoryType loNewEnt = null;
+        UnitInventoryType loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitDepartment)) {
+        if (!(foEntity instanceof UnitInventoryType)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitDepartment) foEntity;
+        loNewEnt = (UnitInventoryType) foEntity;
         
         
         // Test if entry is ok
-        if (loNewEnt.getDepartmentName()== null || loNewEnt.getDepartmentName().isEmpty()){
+        if (loNewEnt.getInvTypeCode().equals("")){
+            setMessage("Invalid inventory type code detected.");
+            return loResult;
+        }
+        
+        if (loNewEnt.getDescription() == null || loNewEnt.getDescription().equals("")){
             setMessage("Invalid description detected.");
             return loResult;
         }
@@ -91,8 +93,6 @@ public class Department implements GRecord{
             Connection loConn = null;
             loConn = setConnection();   
             
-            loNewEnt.setDepartmentID(MiscUtil.getNextCode(loNewEnt.getTable(), "sDeptIDxx", false, loConn, psDeptIDxx));
-            
             if (!pbWithParent) MiscUtil.close(loConn);
             
             //Generate the SQL Statement
@@ -102,12 +102,12 @@ public class Department implements GRecord{
             loOldEnt = openRecord(fsTransNox);
             
             //Generate the Update Statement
-            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sDeptIDxx = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
+            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sInvTypCd = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
         }
         
         //No changes have been made
         if (lsSQL.equals("")){
-            setMessage("Record is not updated");
+            setMessage("No changes made. Record not updated.");
             return loResult;
         }
         
@@ -131,7 +131,7 @@ public class Department implements GRecord{
 
     @Override
     public boolean deleteRecord(String fsTransNox) {
-        UnitDepartment loObject = openRecord(fsTransNox);
+        UnitInventoryType loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -140,7 +140,7 @@ public class Department implements GRecord{
         }
         
         String lsSQL = "DELETE FROM " + loObject.getTable() + 
-                        " WHERE sDeptIDxx = " + SQLUtil.toSQL(fsTransNox);
+                        " WHERE sInvTypCd = " + SQLUtil.toSQL(fsTransNox);
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -161,7 +161,7 @@ public class Department implements GRecord{
 
     @Override
     public boolean deactivateRecord(String fsTransNox) {
-        UnitDepartment loObject = openRecord(fsTransNox);
+        UnitInventoryType loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -178,7 +178,7 @@ public class Department implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.INACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sDeptIDxx = " + SQLUtil.toSQL(loObject.getDepartmentID());
+                        " WHERE sInvTypCd = " + SQLUtil.toSQL(loObject.getInvTypeCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -198,7 +198,7 @@ public class Department implements GRecord{
 
     @Override
     public boolean activateRecord(String fsTransNox) {
-        UnitDepartment loObject = openRecord(fsTransNox);
+        UnitInventoryType loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -215,7 +215,7 @@ public class Department implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sDeptIDxx = " + SQLUtil.toSQL(loObject.getDepartmentID());
+                        " WHERE sInvTypCd = " + SQLUtil.toSQL(loObject.getInvTypeCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -255,7 +255,7 @@ public class Department implements GRecord{
 
     @Override
     public void setBranch(String foBranchCD) {
-        this.psDeptIDxx = foBranchCD;
+        this.psBranchCd = foBranchCD;
     }
 
     @Override
@@ -265,7 +265,7 @@ public class Department implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitDepartment()));
+        return (MiscUtil.makeSelect(new UnitInventoryType()));
     }
     
     //Added methods
@@ -273,7 +273,7 @@ public class Department implements GRecord{
         this.poGRider = foGRider;
         this.psUserIDxx = foGRider.getUserID();
         
-        if (psDeptIDxx.isEmpty()) psDeptIDxx = foGRider.getBranchCode();
+        if (psBranchCd.isEmpty()) psBranchCd = foGRider.getBranchCode();
     }
     
     public void setUserID(String fsUserID){
@@ -294,7 +294,7 @@ public class Department implements GRecord{
     //Member Variables
     private GRider poGRider = null;
     private String psUserIDxx = "";
-    private String psDeptIDxx = "";
+    private String psBranchCd = "";
     private String psWarnMsg = "";
     private String psErrMsgx = "";
     private boolean pbWithParent = false;

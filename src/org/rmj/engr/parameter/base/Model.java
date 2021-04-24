@@ -2,7 +2,7 @@
  * @author  Michael Cuison
  * @date    2018-04-19
  */
-package org.rmj.cas.parameter.base;
+package org.rmj.engr.parameter.base;
 
 import com.mysql.jdbc.Connection;
 import java.sql.ResultSet;
@@ -14,27 +14,30 @@ import org.rmj.appdriver.SQLUtil;
 import org.rmj.appdriver.constants.RecordStatus;
 import org.rmj.appdriver.iface.GEntity;
 import org.rmj.appdriver.iface.GRecord;
-import org.rmj.cas.parameter.pojo.UnitInventoryType;
+import org.rmj.engr.parameter.pojo.UnitModel;
 
-public class InventoryType implements GRecord{   
+public class Model implements GRecord{   
     @Override
-    public UnitInventoryType newRecord() {
-        UnitInventoryType loObject = new UnitInventoryType();
+    public UnitModel newRecord() {
+        UnitModel loObject = new UnitModel();
         
         Connection loConn = null;
         loConn = setConnection();       
+        
+        //assign the primary values
+        loObject.setModelCode(MiscUtil.getNextCode(loObject.getTable(), "sModelCde", true, loConn, psBranchCd));
         
         return loObject;
     }
 
     @Override
-    public UnitInventoryType openRecord(String fstransNox) {
-        UnitInventoryType loObject = new UnitInventoryType();
+    public UnitModel openRecord(String fstransNox) {
+        UnitModel loObject = new UnitModel();
         
         Connection loConn = null;
         loConn = setConnection();   
         
-        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sInvTypCd = " + SQLUtil.toSQL(fstransNox));
+        String lsSQL = MiscUtil.addCondition(getSQ_Master(), "sModelCde = " + SQLUtil.toSQL(fstransNox));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         try {
@@ -57,32 +60,42 @@ public class InventoryType implements GRecord{
     }
 
     @Override
-    public UnitInventoryType saveRecord(Object foEntity, String fsTransNox) {
+    public UnitModel saveRecord(Object foEntity, String fsTransNox) {
         String lsSQL = "";
-        UnitInventoryType loOldEnt = null;
-        UnitInventoryType loNewEnt = null;
-        UnitInventoryType loResult = null;
+        UnitModel loOldEnt = null;
+        UnitModel loNewEnt = null;
+        UnitModel loResult = null;
         
         // Check for the value of foEntity
-        if (!(foEntity instanceof UnitInventoryType)) {
+        if (!(foEntity instanceof UnitModel)) {
             setErrMsg("Invalid Entity Passed as Parameter");
             return loResult;
         }
         
         // Typecast the Entity to this object
-        loNewEnt = (UnitInventoryType) foEntity;
+        loNewEnt = (UnitModel) foEntity;
         
-        
-        // Test if entry is ok
-        if (loNewEnt.getInvTypeCode().equals("")){
-            setMessage("Invalid inventory type code detected.");
-            return loResult;
-        }
-        
-        if (loNewEnt.getDescription() == null || loNewEnt.getDescription().equals("")){
+        if (loNewEnt.getDescription() == null || loNewEnt.getDescription().isEmpty()){
             setMessage("Invalid description detected.");
             return loResult;
         }
+        
+        /*
+        if (loNewEnt.getBriefDescript() == null || loNewEnt.getBriefDescript().isEmpty()){
+            setMessage("Invalid brief description detected.");
+            return loResult;
+        }
+        
+        if (loNewEnt.getModelName() == null || loNewEnt.getModelName().isEmpty()){
+            setMessage("Invalid model name detected.");
+            return loResult;
+        }
+        
+        if (loNewEnt.getBrandCode() == null || loNewEnt.getBrandCode().isEmpty()){
+            setMessage("Invalid brand detected.");
+            return loResult;
+        }
+        */
         
         loNewEnt.setModifiedBy(poCrypt.encrypt(psUserIDxx));
         loNewEnt.setDateModified(poGRider.getServerDate());
@@ -93,6 +106,8 @@ public class InventoryType implements GRecord{
             Connection loConn = null;
             loConn = setConnection();   
             
+            loNewEnt.setModelCode(MiscUtil.getNextCode(loNewEnt.getTable(), "sModelCde", true, loConn, psBranchCd));
+            
             if (!pbWithParent) MiscUtil.close(loConn);
             
             //Generate the SQL Statement
@@ -102,12 +117,12 @@ public class InventoryType implements GRecord{
             loOldEnt = openRecord(fsTransNox);
             
             //Generate the Update Statement
-            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sInvTypCd = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
+            lsSQL = MiscUtil.makeSQL((GEntity) loNewEnt, (GEntity) loOldEnt, "sModelCde = " + SQLUtil.toSQL(loNewEnt.getValue(1)));
         }
         
         //No changes have been made
         if (lsSQL.equals("")){
-            setMessage("No changes made. Record not updated.");
+            setMessage("Record is not updated");
             return loResult;
         }
         
@@ -131,7 +146,7 @@ public class InventoryType implements GRecord{
 
     @Override
     public boolean deleteRecord(String fsTransNox) {
-        UnitInventoryType loObject = openRecord(fsTransNox);
+        UnitModel loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -140,7 +155,7 @@ public class InventoryType implements GRecord{
         }
         
         String lsSQL = "DELETE FROM " + loObject.getTable() + 
-                        " WHERE sInvTypCd = " + SQLUtil.toSQL(fsTransNox);
+                        " WHERE sModelCde = " + SQLUtil.toSQL(fsTransNox);
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -161,7 +176,7 @@ public class InventoryType implements GRecord{
 
     @Override
     public boolean deactivateRecord(String fsTransNox) {
-        UnitInventoryType loObject = openRecord(fsTransNox);
+        UnitModel loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -178,7 +193,7 @@ public class InventoryType implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.INACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sInvTypCd = " + SQLUtil.toSQL(loObject.getInvTypeCode());
+                        " WHERE sModelCde = " + SQLUtil.toSQL(loObject.getModelCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -198,7 +213,7 @@ public class InventoryType implements GRecord{
 
     @Override
     public boolean activateRecord(String fsTransNox) {
-        UnitInventoryType loObject = openRecord(fsTransNox);
+        UnitModel loObject = openRecord(fsTransNox);
         boolean lbResult = false;
         
         if (loObject == null){
@@ -215,7 +230,7 @@ public class InventoryType implements GRecord{
                         " SET  cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE) + 
                             ", sModified = " + SQLUtil.toSQL(poCrypt.encrypt(psUserIDxx)) +
                             ", dModified = " + SQLUtil.toSQL(poGRider.getServerDate()) + 
-                        " WHERE sInvTypCd = " + SQLUtil.toSQL(loObject.getInvTypeCode());
+                        " WHERE sModelCde = " + SQLUtil.toSQL(loObject.getModelCode());
         
         if (!pbWithParent) poGRider.beginTrans();
         
@@ -265,7 +280,7 @@ public class InventoryType implements GRecord{
 
     @Override
     public String getSQ_Master() {
-        return (MiscUtil.makeSelect(new UnitInventoryType()));
+        return (MiscUtil.makeSelect(new UnitModel()));
     }
     
     //Added methods
