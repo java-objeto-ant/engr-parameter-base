@@ -25,7 +25,7 @@ public class Company implements GRecord{
         loConn = setConnection();       
         
         //assign the primary values
-        loObject.setCompanyID(MiscUtil.getNextCode(loObject.getTable(), "sCompnyID", false, loConn, ""));
+        loObject.setCompanyID(MiscUtil.getNextCode(loObject.getTable(), "sCompnyID", false, loConn, "M"));
         
         return loObject;
     }
